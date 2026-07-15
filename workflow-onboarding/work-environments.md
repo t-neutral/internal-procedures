@@ -1,4 +1,4 @@
-# Entornos de trabajo — T_NEUTRAL
+# Entornos digitales de trabajo — T_NEUTRAL
 
 **Documento troncal · Mapa del ecosistema de herramientas**
 Este documento explica qué entornos usa T_NEUTRAL, para qué sirve cada uno y cómo se relacionan. Es el punto de entrada: cada entorno tiene además su propio anexo con el detalle práctico.
