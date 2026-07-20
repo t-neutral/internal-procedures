@@ -1,0 +1,71 @@
+# Procedimiento · De artefacto a activo: descomponer un artefacto en código y datos
+
+Guía operativa para convertir un artefacto generado en Claude (un HTML autónomo, con sus datos y su lógica dentro de un solo fichero) en un proyecto versionado, con el código y los datos separados y documentados. Es una guía de un tipo de trabajo concreto, no un documento de fondo: da por leídos el documento troncal *Entornos de trabajo*, el *Anexo B (Git y GitHub)* y la *Guía de trabajo diario Claude/Git*, y solo desarrolla los pasos que esas guías no cubren.
+
+El caso práctico que recorre esta guía de principio a fin es el Categorizador RE-VISTE v6, el primer artefacto que la empresa lleva por este camino. Los números que aparecen son los suyos, medidos sobre el fichero real.
+
+---
+
+## 2. Antes de empezar: lo que esta guía añade a las que ya existen
+
+La preparación del entorno (instalar, clonar un repositorio, entender qué es una rama o un commit) está resuelta en el *Anexo B* y en la *Guía de trabajo diario Claude/Git*. No se repite aquí. Quien no las haya leído, las lee antes de seguir; esta guía no tiene sentido sin ellas.
+
+Lo que sí conviene añadir es una condición de partida propia de este trabajo. La descomposición no se hace sobre el artefacto en producción ni sobre la única copia que existe. Se hace sobre una copia dentro de un repositorio ya creado, en una rama propia, con el artefacto original guardado y a salvo. El principio es sencillo: mientras se descompone, la versión que funciona sigue intacta. Si algo sale mal a mitad de camino, no se ha perdido nada, porque el punto de partida sigue ahí, versionado y recuperable. Este es el mismo mecanismo de rama que describe la guía diaria, aplicado a un trabajo que dura varios días en lugar de unas horas.
+
+Una segunda condición es tener a mano la documentación del artefacto, si existe. El Categorizador tenía una guía técnica que describía cada dato y cada función; eso convirtió la descomposición en una tarea de horas en lugar de días, porque no hubo que adivinar qué era cada cosa. Cuando esa documentación no existe, el primer trabajo es reconstruirla leyendo el artefacto con Claude, y conviene contarlo en la ficha de la tarea para que el tiempo estimado lo refleje.
+
+## 4. El recorrido, paso a paso
+
+La descomposición sigue cinco pasos en orden. Cada uno termina en un commit, de modo que el avance queda registrado a diario tal como pide la guía diaria, y en cualquier momento se puede ver hasta dónde se ha llegado. Ninguno de los cinco exige escribir código: en todos, el trabajo de la persona es decidir y revisar, y el de Claude Code es proponer, editar y ejecutar. La instrucción se le da en lenguaje natural.
+
+### A. Radiografía del artefacto
+
+El primer paso es entender qué hay dentro antes de mover nada. Se le pide a Claude Code que lea el artefacto y produzca un inventario: qué datos contiene, dónde empieza y termina cada uno, qué funciones de cálculo existen y qué parte es interfaz. El resultado es una lista, no un cambio; el fichero todavía no se toca.
+
+En el Categorizador, esta radiografía es la que reveló los porcentajes del apartado 2 y, sobre todo, la que identificó las costuras limpias por donde separar: seis bloques de datos bien delimitados, dos funciones de cálculo independientes de la interfaz, y un bloque de presentación que no contenía ninguna regla de negocio. Saber esto de antemano es lo que permite planear los pasos siguientes en lugar de improvisarlos.
+
+Este paso cierra con un documento breve, guardado en el repositorio, que describe lo encontrado. Es la base del README que el proyecto tendrá al final.
+
+### B. Sacar los datos a ficheros propios
+
+Con el inventario delante, se extrae cada bloque de datos a su propio fichero. Los datos que son texto estructurado salen a ficheros que Git compara bien y que cualquiera puede abrir y leer sin abrir el artefacto entero. A Claude Code se le pide que extraiga un bloque, lo guarde en su fichero y ajuste el artefacto para que lo lea desde fuera en lugar de tenerlo dentro. Se hace un bloque cada vez, con su commit, de forma que si algo deja de funcionar se sabe exactamente qué cambio lo causó.
+
+### C. Separar la lógica de la presentación
+
+Extraídos los datos, queda separar las reglas de cálculo de la interfaz que las muestra. Las funciones que ponderan medias, calculan alertas y asignan códigos son el corazón de la herramienta y no dependen de ningún color ni de ningún botón; pueden vivir en su propio fichero, y deben, porque son el activo técnico que la empresa quiere proteger y reutilizar. La interfaz, por su parte, se queda con lo suyo: mostrar y recoger lo que el usuario hace.
+
+A Claude Code se le pide que mueva las funciones de cálculo a un fichero aparte y deje la interfaz llamándolas desde fuera. El criterio para saber qué es cálculo y qué es interfaz lo da una pregunta simple que la persona puede aplicar sin ser técnica: ¿esta función seguiría teniendo sentido si la herramienta se viera completamente distinta? Si la respuesta es sí, es lógica y va al fichero de cálculo. Si solo tiene sentido con esta pantalla concreta, es presentación.
+
+Este paso es el que más se beneficia de la validación que describe el apartado 5, porque mover una regla de cálculo sin querer cambiarla es el riesgo mayor de toda la descomposición.
+
+### D. Comprobar que nada ha cambiado de comportamiento
+
+Separar no es reescribir. Al terminar los pasos B y C, la herramienta debe producir exactamente los mismos resultados que producía el artefacto original; si un cálculo da un número distinto, la descomposición ha introducido un error y hay que encontrarlo antes de seguir. Esta comprobación es obligatoria y es la que distingue un trabajo serio de uno que solo parece terminado.
+
+La forma de hacerla no requiere programar. Se toman unos cuantos casos del artefacto original con su resultado conocido (en el Categorizador, la guía técnica traía casos de prueba con sus valores esperados) y se comprueba que la versión descompuesta da los mismos. Si la documentación del artefacto no traía casos, se generan antes de empezar a descomponer, anotando qué da el original en varias situaciones, para tener contra qué comparar después. A Claude Code se le pide que ejecute esa comprobación y muestre las diferencias, si las hay. Mientras haya una sola diferencia sin explicar, la tarea no está cerrada.
+
+### E. Documentar y dejar el proyecto listo para otros
+
+El último paso convierte el resultado en algo que otra persona pueda retomar sin preguntar. Se escribe el README que la *Guía de trabajo diario Claude/Git* espera encontrar al empezar en un proyecto: qué es la herramienta, qué produce, dónde está cada dato, dónde está la lógica, cómo se comprueba que funciona. Se recogen las convenciones que se hayan ido fijando (cómo se nombran los ficheros de datos, en qué idioma van los mensajes de commit) y se anota lo que quedó pendiente. El artefacto original se conserva en el repositorio como referencia de partida, no se borra.
+
+A partir de aquí el proyecto entra en el flujo normal de la guía diaria, y cualquier cambio futuro (un dato que se actualiza, una regla que se afina) es una tarea corriente sobre una base ordenada, no una cirugía sobre un bloque único.
+
+## 5. La red de seguridad: por qué esto se puede hacer sin ser programadora
+
+Toda la descomposición descansa en una garantía que ya está en las guías existentes y que conviene tener presente en cada paso. Cada cambio se hace en una rama, no sobre la versión validada; cada bloque extraído es un commit propio; y la comprobación del paso D confirma que el comportamiento no ha cambiado. Las tres cosas juntas significan que ningún error es irreversible: siempre se puede volver al commit anterior, y siempre se sabe qué cambio causó qué. Este es el mismo mecanismo de la guía diaria, y es lo que permite que una persona no técnica dirija un trabajo técnico sin miedo a romper nada de forma definitiva.
+
+El reparto de papeles es el mismo que describe la guía diaria, aplicado a este trabajo concreto. La persona decide qué dato sale, dónde va y qué cuenta como cálculo frente a presentación; revisa que cada paso tenga sentido; y juzga si el resultado es correcto. Claude Code lee, propone, extrae, edita y ejecuta los comandos de Git, explicando siempre qué hace. La mecánica la lleva la herramienta; el criterio lo pone la persona. Que el Categorizador se construyera sin conocimientos técnicos avanzados demuestra que ese criterio existe en el equipo; descomponerlo solo lo aplica a una tarea distinta.
+
+## 6. Cuándo parar y preguntar
+
+La autonomía tiene el mismo límite sano que fija la guía diaria, con un par de situaciones propias de este trabajo. Conviene detenerse y consultar cuando la comprobación del paso D da una diferencia que no se explica y no se localiza su origen; cuando no está claro si un dato es texto que debe ir al repositorio o un binario que debe quedarse fuera, y la duda persiste tras aplicar la frontera del *Anexo B*; cuando al separar la lógica aparece una función que mezcla cálculo y presentación de forma que no se deja separar limpiamente; y cuando el artefacto no tiene documentación previa y reconstruirla está llevando más tiempo del que la tarea tenía previsto. En los cuatro casos, la vía es la de siempre: abrir una ficha describiendo el bloqueo, o preguntar en el contexto del proyecto. Preguntar a tiempo evita rehacer, que en este trabajo cuesta más que en el ofimático.
+
+## 7. Este procedimiento como formación
+
+El recorrido descrito es, a la vez, la forma de descomponer un artefacto y la primera experiencia práctica del equipo con Claude Code y GitHub sobre un trabajo con sentido propio. Esa doble función es deliberada. Se aprende el ciclo de ramas, commits y pull requests de la guía diaria haciéndolo sobre algo que a la empresa le importa, no sobre un ejercicio de prueba que se tira después. El Categorizador es el proyecto piloto en el sentido que describe la sección 7 de la guía diaria: el primero que se lleva entero por este camino, en equipo, observando qué cuesta y qué falla, y ajustando el procedimiento con lo aprendido.
+
+De ese pilotaje debería salir una versión revisada de esta misma guía, con los tropiezos reales de la primera descomposición ya incorporados. Es el modo correcto de madurar un procedimiento: escribir la primera versión con lo que se sabe, y corregirla con lo que se aprende haciéndola. Esta es esa primera versión.
+
+---
+
+*T_NEUTRAL · Fuente en control de versiones: `11_procedimiento_descomposicion-artefactos.md`. La versión viva y editable reside en el repositorio de procedimientos; cualquier copia en PDF u otro formato es para consulta.*
